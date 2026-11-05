@@ -1,0 +1,327 @@
+What:		/sys/bus/platform/drivers/poc-version/<dev>
+Date:		November 2026
+KernelVersion:	5.15
+Contact:	Navid Jalali <navidcity@gmail.com>
+Description:
+		The poc-version driver binds to every Instance of the PoC
+		library's Version Register IP core
+		(PoC.axi4lite_GitVersionRegister) that the device tree
+		describes with the compatible string
+		"plc2,poc-git-version-register". Each Instance is a
+		separate platform device <dev>, and the driver directory
+		holds one symbolic link per bound Instance, named after the
+		device (for example "a0010000.version"). The same device is
+		also reachable as /sys/bus/platform/devices/<dev>. The
+		driver directory also holds entries that are not Instances
+		(bind, unbind, uevent, module); only Instances have a
+		common/ directory.
+
+		A design may contain any number of Instances. All of them
+		are found the same way, for example::
+
+		  for dev in /sys/bus/platform/drivers/poc-version/*/; do
+		      [ -d "${dev}common" ] || continue
+		      cat "${dev}common/build_date"
+		  done
+
+		Each Instance has three Category directories, common/, top/
+		and uid/, with one file per Value. The files of an Instance
+		reflect only that Instance's Registers.
+
+		Rules that apply to every Value file below:
+
+		- The files are read-only (mode 0444). Nothing written
+		  through sysfs can change what the driver reports.
+		- Each file holds one Formatted value followed by a single
+		  newline ("\n").
+		- Values are read from the Instance's Cached copy, which is
+		  filled from the hardware once, when the Instance is
+		  probed. Reading a file never accesses the hardware.
+		- A file is absent when the active Register layout of the
+		  Instance lacks that Value. The presence of a file means
+		  the Value exists. Which layout is active is given by
+		  common/version_of_version_reg. The three Category
+		  directories always exist for a bound Instance, even when
+		  the active layout has no Value in one of them; such a
+		  directory is then empty.
+		- An Instance whose Version-of-Version-Reg the driver does
+		  not know is not bound: probe fails with -ENODEV and logs
+		  the Version-of-Version-Reg. Such an Instance has no
+		  Category directories and no files at all. Today only
+		  Register layout 1 is known.
+		- Values are shown as they are, without checking whether
+		  they make sense. Implausible contents (for example month
+		  13, or non-printable bytes in a string) are printed as
+		  they are.
+		- Decimal numbers have no leading zeros unless stated.
+		  Hex digits are lower case and have no "0x" prefix.
+
+What:		/sys/bus/platform/drivers/poc-version/<dev>/common/build_date
+Date:		November 2026
+KernelVersion:	5.15
+Contact:	Navid Jalali <navidcity@gmail.com>
+Description:
+		(RO) Build date of the FPGA design, from Common.BuildDate,
+		as an ISO 8601 date::
+
+		  YYYY-MM-DD\n
+
+		The year is zero-padded to at least four digits, the month
+		and the day to at least two.
+
+		Present in Register layout 1.
+
+		Example::
+
+		  2026-10-27
+
+What:		/sys/bus/platform/drivers/poc-version/<dev>/common/version_of_version_reg
+Date:		November 2026
+KernelVersion:	5.15
+Contact:	Navid Jalali <navidcity@gmail.com>
+Description:
+		(RO) Version-of-Version-Reg: the unsigned decimal number in
+		the low byte of Common.NumberModule_VersionOfVersionReg. It
+		says which Register layout the Instance uses. The upper bits
+		of that Register are not shown. Format::
+
+		  <n>\n
+
+		Present in Register layout 1.
+
+		Example (Register layout 1)::
+
+		  1
+
+What:		/sys/bus/platform/drivers/poc-version/<dev>/common/vivado_version
+Date:		November 2026
+KernelVersion:	5.15
+Contact:	Navid Jalali <navidcity@gmail.com>
+Description:
+		(RO) Version of the Vivado toolchain that built the design,
+		from Common.VivadoVersion, as three unsigned decimal
+		numbers::
+
+		  Major.Minor.Patch\n
+
+		Present in Register layout 1.
+
+		Example::
+
+		  2024.2.0
+
+What:		/sys/bus/platform/drivers/poc-version/<dev>/common/project_name
+Date:		November 2026
+KernelVersion:	5.15
+Contact:	Navid Jalali <navidcity@gmail.com>
+Description:
+		(RO) Project name of the FPGA design, from the 20-byte
+		Common.ProjectName block, as text::
+
+		  <text>\n
+
+		The text stops at the first null byte and never goes beyond
+		the 20-byte block, so it is 0 to 20 bytes long. An empty
+		name reads as just "\n". Bytes are printed as they are.
+
+		Present in Register layout 1.
+
+		Example::
+
+		  my_board_design
+
+What:		/sys/bus/platform/drivers/poc-version/<dev>/top/version
+Date:		November 2026
+KernelVersion:	5.15
+Contact:	Navid Jalali <navidcity@gmail.com>
+Description:
+		(RO) Version of the top-level FPGA design that contains the
+		Instance, from Top.Version::
+
+		  major.minor.patch[+N][ dirty][ untracked]\n
+
+		major, minor and patch are unsigned decimal numbers.
+		Optional parts, in this order:
+
+		- "+N" when the build is N commits after the tag (N is
+		  the 6-bit commits-to-tag Field, unsigned decimal, 1 to
+		  63). Omitted when N is 0.
+		- " dirty" (with a leading space) when the Dirty_modified
+		  bit is set: the working tree had modified files.
+		- " untracked" (with a leading space) when the
+		  Dirty_untracked bit is set: the working tree had
+		  untracked files.
+
+		Present in Register layout 1.
+
+		Examples::
+
+		  1.4.0
+		  1.4.0+3
+		  2.10.5+63
+		  1.4.0 dirty
+		  1.4.0 untracked
+		  1.4.0 dirty untracked
+		  1.4.0+3 dirty untracked
+
+What:		/sys/bus/platform/drivers/poc-version/<dev>/top/git_hash
+Date:		November 2026
+KernelVersion:	5.15
+Contact:	Navid Jalali <navidcity@gmail.com>
+Description:
+		(RO) Git commit hash of the top-level design, from the
+		20-byte Top.GitHash block, as a hex integer of exactly 40
+		lower-case hex digits without "0x"::
+
+		  <40 hex digits>\n
+
+		The IP core stores the hash reversed. The file shows it in
+		normal commit order, as Git prints it, so it can be passed
+		straight to "git show".
+
+		Present in Register layout 1.
+
+		Example::
+
+		  bc91981278b2611b0b12dd09bf1a2d8f74f0b8ed
+
+What:		/sys/bus/platform/drivers/poc-version/<dev>/top/git_date
+Date:		November 2026
+KernelVersion:	5.15
+Contact:	Navid Jalali <navidcity@gmail.com>
+Description:
+		(RO) Commit date of the top-level design, from Top.GitDate,
+		as an ISO 8601 date::
+
+		  YYYY-MM-DD\n
+
+		The year is zero-padded to at least four digits, the month
+		and the day to at least two.
+
+		Present in Register layout 1.
+
+		Example::
+
+		  2026-10-25
+
+What:		/sys/bus/platform/drivers/poc-version/<dev>/top/git_time
+Date:		November 2026
+KernelVersion:	5.15
+Contact:	Navid Jalali <navidcity@gmail.com>
+Description:
+		(RO) Commit time of the top-level design, from Top.GitTime,
+		as an ISO 8601 time with a whole-hour time zone::
+
+		  HH:MM:SS±hh\n
+
+		Hours, minutes and seconds are zero-padded to at least two
+		digits. The time zone is the signed offset from UTC in whole
+		hours (a signed byte, -128 to +127): always a sign ("+" or
+		"-", "+" for zero) followed by at least two digits.
+
+		Present in Register layout 1.
+
+		Examples::
+
+		  23:59:59+01
+		  14:03:09+00
+		  14:03:09-05
+
+What:		/sys/bus/platform/drivers/poc-version/<dev>/top/branch_name_tag
+Date:		November 2026
+KernelVersion:	5.15
+Contact:	Navid Jalali <navidcity@gmail.com>
+Description:
+		(RO) Git branch or tag name of the top-level design, from the
+		64-byte Top.BranchName_Tag block, as text::
+
+		  <text>\n
+
+		The text stops at the first null byte and never goes beyond
+		the 64-byte block, so it is 0 to 64 bytes long. An empty
+		name reads as just "\n". Bytes are printed as they are.
+
+		Present in Register layout 1.
+
+		Example::
+
+		  main
+
+What:		/sys/bus/platform/drivers/poc-version/<dev>/top/git_url
+Date:		November 2026
+KernelVersion:	5.15
+Contact:	Navid Jalali <navidcity@gmail.com>
+Description:
+		(RO) Git URL of the repository the top-level design was
+		built from, from the 128-byte Top.GitURL block, as text::
+
+		  <text>\n
+
+		The text stops at the first null byte and never goes beyond
+		the 128-byte block, so it is 0 to 128 bytes long. An empty
+		URL reads as just "\n". Bytes are printed as they are.
+
+		Present in Register layout 1.
+
+		Example::
+
+		  https://git.example.org/fpga/board.git
+
+What:		/sys/bus/platform/drivers/poc-version/<dev>/uid/uid
+Date:		November 2026
+KernelVersion:	5.15
+Contact:	Navid Jalali <navidcity@gmail.com>
+Description:
+		(RO) UID, from the 16-byte UID.UID block, as a hex integer
+		of exactly 32 lower-case hex digits without "0x", most
+		significant word (highest offset) first::
+
+		  <32 hex digits>\n
+
+		This file always exists in Register layout 1. When the
+		design does not provide a UID, the file reads all zeros.
+
+		Examples::
+
+		  000102030405060708090a0b0c0d0e0f
+		  00000000000000000000000000000000
+
+What:		/sys/bus/platform/drivers/poc-version/<dev>/uid/user_efuse
+Date:		November 2026
+KernelVersion:	5.15
+Contact:	Navid Jalali <navidcity@gmail.com>
+Description:
+		(RO) User eFuse, from the 4-byte UID.User_eFuse block, as a
+		hex integer of exactly 8 lower-case hex digits without
+		"0x"::
+
+		  <8 hex digits>\n
+
+		This file always exists in Register layout 1. When the
+		design does not provide a User eFuse, the file reads all
+		zeros.
+
+		Examples::
+
+		  deadbeef
+		  00000000
+
+What:		/sys/bus/platform/drivers/poc-version/<dev>/uid/user_id
+Date:		November 2026
+KernelVersion:	5.15
+Contact:	Navid Jalali <navidcity@gmail.com>
+Description:
+		(RO) User ID set at synthesis, from the 12-byte UID.User_ID
+		block, as a hex integer of exactly 24 lower-case hex digits
+		without "0x", most significant word (highest offset) first::
+
+		  <24 hex digits>\n
+
+		This file always exists in Register layout 1. When the
+		design does not provide a User ID, the file reads all
+		zeros.
+
+		Examples::
+
+		  00c0ffee0123456789abcdef
+		  000000000000000000000000

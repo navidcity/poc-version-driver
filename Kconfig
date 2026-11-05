@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Used only for the in-tree KUnit build ("make kunit"). The out-of-tree
+# module build against a kernel tree does not read this file.
+
+config POC_VERSION
+	tristate "PoC Version Register IP core"
+	depends on HAS_IOMEM
+	select REGMAP_MMIO
+	help
+	  Driver for the PoC library's Version Register IP core
+	  (PoC.axi4lite_GitVersionRegister). Each Instance shows its build,
+	  Git and unique-ID metadata as read-only sysfs files, grouped by
+	  Category, with debugfs files for testing.
+
+	  To compile this driver as a module, choose M here: the module
+	  will be called poc-version.
+
+config POC_VERSION_KUNIT_TEST
+	bool "KUnit tests for the poc-version driver" if !KUNIT_ALL_TESTS
+	depends on POC_VERSION && KUNIT
+	depends on KUNIT=y || POC_VERSION=m
+	default KUNIT_ALL_TESTS
+	help
+	  KUnit tests of Value rendering: given the Raw values of an
+	  Instance's Registers, they check the exact text of each sysfs
+	  Value file. The tests are built into the poc-version driver
+	  itself and need no hardware.
+
+	  If unsure, say N.

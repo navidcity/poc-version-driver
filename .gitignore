@@ -40,12 +40,6 @@ tags
 [._]*.un~
 
 .vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
-!*.code-workspace
 .vscode-ctags
 
 # Built Visual Studio Code Extensions
@@ -107,5 +101,8 @@ dkms.conf
 # debug information files
 *.dwo
 
-# build
+# build: host build in the root, cross builds of "make matrix" in build/
 build/
+
+# The kernel's .clang-format, linked from a kernel tree for editors
+.clang-format

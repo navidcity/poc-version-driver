@@ -1,0 +1,33 @@
+{
+	"name": "poc-version-driver",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"remoteUser": "dev",
+	"updateRemoteUserUID": true,
+	// The kernel trees live in a named volume, so they survive container
+	// rebuilds and are only downloaded once.
+	"mounts": [
+		"source=poc-version-kernels,target=/opt/kernels,type=volume"
+	],
+	"containerEnv": {
+		"KERNELS": "/opt/kernels"
+	},
+	// User-Mode Linux backs its memory with a file in /dev/shm and maps it
+	// PROT_EXEC. Docker's default /dev/shm is 64 MiB and noexec, so UML
+	// stops before any KUnit test runs; mount our own.
+	"runArgs": [
+		"--tmpfs=/dev/shm:rw,nosuid,nodev,exec,size=2g"
+	],
+	// The same script a host runs (see the README); it skips what the
+	// volume already has.
+	"onCreateCommand": "bash scripts/setup-kernels.sh /opt/kernels",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-vscode.cpptools",
+				"ms-vscode.makefile-tools"
+			]
+		}
+	}
+}
