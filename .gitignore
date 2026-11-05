@@ -101,5 +101,8 @@ dkms.conf
 # debug information files
 *.dwo
 
-# build
+# build: host build in the root, cross builds of "make matrix" in build/
 build/
+
+# The kernel's .clang-format, linked from a kernel tree for editors
+.clang-format

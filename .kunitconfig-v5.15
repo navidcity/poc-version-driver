@@ -1,0 +1,7 @@
+# Added to .kunitconfig for the v5.15 tree only (see the Makefile).
+#
+# POC_VERSION depends on HAS_IOMEM. UML has it only with IOMEM emulation,
+# which PCI over virtio selects; v5.15's kunit.py does not turn that on by
+# itself (later trees add CONFIG_KUNIT_UML_PCI through arch_uml.config).
+CONFIG_VIRTIO_UML=y
+CONFIG_UML_PCI_OVER_VIRTIO=y

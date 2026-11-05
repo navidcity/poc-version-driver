@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/misc/plc2,poc-git-version-register.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: PoC Version Register IP core
+
+maintainers:
+  - Navid Jalali <navidcity@gmail.com>
+
+description: |
+  The PoC library's FPGA IP core PoC.axi4lite_GitVersionRegister: a block of
+  read-only 32-bit registers on an AXI4-Lite bus that hold build, Git and
+  unique-ID metadata fixed when the FPGA design is synthesised. A design may
+  contain several instances, each with its own node.
+
+  The compatible carries no IP core version. The register layout is selected
+  by the Version-of-Version-Reg, a register at the same offset in every
+  layout, so one compatible covers every layout the IP core ships.
+
+properties:
+  compatible:
+    const: plc2,poc-git-version-register
+
+  reg:
+    maxItems: 1
+
+required:
+  - compatible
+  - reg
+
+additionalProperties: false
+
+examples:
+  - |
+    bus {
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        version@43c00000 {
+            compatible = "plc2,poc-git-version-register";
+            reg = <0x43c00000 0x1000>;
+        };
+    };
